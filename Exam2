@@ -1,0 +1,260 @@
+//Sa se genereze un graf ponderat orientat avand ca noduri chei numerice primite de la tastatura si arce automat introduse intre toate numerele prime
+//pornind de la mic la mai mare. Cheile din graf sunt unice, ponderea fiecarui arc este data de suma cheilor din nodurile conectate, se vor introduce minim 
+//10 numere cu valori intre 0 si 100
+//Se sterg primele 5 noduri. Sa se afiseze parcurgerea grafului in adancime pornind de la nodul cu valoarea cea mai mare
+
+#include <stdio.h>
+#define MAXN 10
+#define MAGIC -31337
+#define BLACK -1
+#define WHITE 1
+#define GRAY 0
+
+
+struct ponderi {
+	int pondere;
+	struct ponderi *pnext;
+};
+
+struct node {
+	int key;
+	int culoare;
+	struct node *next;
+	struct ponderi *p;
+};
+
+struct node * noduri[MAXN];
+int contor = 0;
+
+void InitGraf(void) {
+	int i;
+	struct node *crt, *aux;
+
+	for (i = 0; i < MAXN; i++)
+	{
+		if (noduri[i] != NULL)
+		{
+			crt = noduri[i]->next;
+			free(noduri[i]);
+			while (crt != NULL)
+			{
+				aux = crt;
+				crt = crt->next;
+				free(aux);
+			}
+		}
+		noduri[i] = NULL;
+	}
+	contor = 0;
+}
+
+void InsertNod(int key)
+{
+	int i, info = 0;
+	if (GrafPlin())
+	{
+		printf("Graful este plin, nu se mai pot insera noduri\n");
+		return;
+	}
+	noduri[contor] = (struct node *)malloc(sizeof(struct node));
+	if (noduri[contor] == NULL)
+	{
+		printf("Eroare la alocarea memoriei pentru nod\n");
+		return;
+	}
+	//cautam ca nu cumva sa fie deja nodul dorit in graf
+	for (i = 0; i < contor; i++)
+	{
+		if (noduri[i]->key == key)
+		{
+			printf("Nodul exista\n");
+			return;
+		}
+	}
+	noduri[contor]->key = key;
+	noduri[contor]->next = NULL;
+	contor++;
+	printf("S-a introdus nodul\n");
+}
+
+
+
+void InsertArc(int keyA, int keyB)
+{
+	if (GrafPlin()) //testam daca graful este plin
+	{
+		printf("Graful este plin. Nu pot insera arce in graf. \n");
+		return;
+	}
+
+	int n1 = -1, n2 = -1;
+	int i, x, pond;
+	int contorArc = 0;
+
+	for (i = 0; i < contor; i++)
+	{
+		if (noduri[i]->key == keyA) { n1 = i; break; } //salvam pozitia unde a fost gasit nodul
+	}
+	for (i = 0; i < contor; i++)
+	{
+		if (noduri[i]->key == keyB) { n2 = i; break; }//salvam pozitia unde a fost gasit nodul
+	}
+	if ((n1 < 0) || (n2 < 0) || (n1 > MAXN) || (n2 > MAXN))
+	{
+		printf("Nu pot insera arc intre cheile solicitate.\n");
+		return;
+	}
+	
+	if (keyA < keyB)
+	{
+		noduri[n1]->next = noduri[n2];
+		pond = keyA + keyB;
+		noduri[n1]->p = pond;
+		contorArc++;
+	}
+	else
+	{
+		noduri[n2]->next = noduri[n1];
+		pond = keyA + keyB;
+		noduri[n2]->p = pond;
+		contorArc++;
+	}
+	
+	printf("S-a introdus arcul\n");
+}
+
+int GrafPlin() 
+{
+	int i, contor = 0;
+	int contorArce = 0;
+	struct node *crt;
+
+	for (i = 0; i < MAXN; i++)
+	{
+		if (noduri[i] != NULL) contor++;
+	}
+
+	if (contor < MAXN) return 0; // false, nu e plin, incap noduri noi
+
+	for (i = 0; i < MAXN; i++)
+	{
+		if (noduri[i] != NULL) crt = noduri[i]->next;
+		else continue;
+		while (crt != NULL)
+		{
+			contorArce++;
+			crt = crt->next;
+		}
+	}
+
+	if (contorArce == MAXN * (MAXN - 1)) return 1;// true, graful e plin si la arce
+	else return 0; // false
+}
+
+int Verif_Nr_Prim(int key)
+{
+	int d, ok = 1;//presupunem ca numarul este prim,adica are exact 2 divizori
+	if (key < 2)
+	{
+		return 0;//nr nu este prim daca este mai mic decat 2
+	}
+	else
+	{
+		for (d = 2; d * d <= key; d++)
+		{
+			if (key % d == 0)
+			{
+				ok = 0;//nr nu este prim
+				break;
+			}
+		}
+		return ok;
+	}
+}
+
+void verificare() //functie cu care verificam daca doua noduri sunt pime si in caz afirmativ se apeleaza functia de inserare a arcului
+{
+	int z, k, ok1, ok2;
+	for (z = 0; z < contor; z++)
+		for (k = z + 1; k <= contor; k++)
+		{
+			ok1 = Verif_Nr_Prim(noduri[z]->key);
+			ok2 = Verif_Nr_Prim(noduri[k]->key);
+			if (ok1 == 1 && ok2 == 1)
+				InsertArc(noduri[z]->key, noduri[k]->key);
+		}
+}
+
+void SuprimaNod()
+{
+	int x = 0, i, k, max = 0;
+	struct node* crt;
+
+	// se sterg toate arcele, apoi se sterge nodul
+		
+	for (i = 0; i < 5; i++) //mergem in primele 5 noduri si stergem toate arcele
+	{
+		crt = noduri[i]->next;
+		if (crt != NULL)
+		{
+			crt = noduri[x]->next;
+			free(crt);
+		}
+		else
+			printf("Nu avem nimic de sters la nodul de pe pozitia %d", x);
+		
+	}
+
+	for (i = 0; i < 5; i++) // mergem in primele 5 noduri si le stergem
+	{
+		if (noduri[i] != NULL)
+		{
+			noduri[i] = noduri[i + 1];
+
+		}
+	}
+	contor--;
+}
+
+void _afisareMeniu()
+{
+	printf("	0. Iesirea din program\n");
+	printf("	1. InitGraf\n");
+	printf("	2. InsertNod\n");
+	printf("	3. Inserare Arce in mod automat\n");
+	printf("	4. Stergerea primelor 5 numere din graf\n");
+}
+
+int main()
+{
+	int select;
+
+	do
+	{
+		printf("Afisare meniu:\n");
+		_afisareMeniu();
+
+		printf("Selectati optiunea dvs: ");
+		scanf("%d", &select);
+		switch (select)
+		{
+		case 0:
+			break;
+		case 1:
+			InitGraf();
+			break;
+		case 2:
+			printf("Introduceti cheia nodului de inserat: ");
+			int x;
+			scanf("%d", &x);
+			InsertNod(x);
+			break;
+		case 3:
+			verificare();
+			break;
+		case 4:
+			SuprimaNod();
+			break;
+		}
+	} while (select != 0);
+}
