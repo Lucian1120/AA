@@ -1,0 +1,287 @@
+//Sa se insereze intr-un arbore binar ordonat10 numere intregi. Spre exemplu:
+//12,5,40,19,27,33,22,18,25,3
+
+//Dupa finalizarea insertiei, se sterg toate numerele pare in ordinea care acestea sunt descoperite la parcuregerea orborelui in ordine.
+//La stergerea unui nod care are fii se va utiliza altenativ regula predecosorului, respectiv succesorului, alternarea incepe cu regula predecosorului.
+//Sa se verificae daca prin alternarea regulii predecesorului cu a scuccesorului se obtine la final un arbore cu numere impare, care este echilibrat in sens AVL.
+//Sa se afiseze pe ecran corespunzator "Echilibrat AVL" sau "Dezechilibrat"
+
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+typedef struct nod
+{
+	int cheie;
+	int inaltime;
+	struct nod* stanga;
+	struct nod* dreapta;
+}nod;
+
+nod *rad;
+nod *arb_nou;
+int *noduri[100]; //vector in care salvam numere pare dupa traversarea in inordine
+int echilibrat = 1; //presupunem ca arborele este echilibrat
+
+nod* initializeaza(nod* rad)
+{
+	if (rad != NULL)
+	{
+		free(rad);
+	}
+	rad = NULL;
+	return rad;
+}
+
+int maximul(int a, int b)
+{
+	if (a > b)
+		return a;
+	else
+		return b;
+}
+
+int factor_echilibrare(nod* n)
+{
+	if (n == NULL)
+	{
+		return 0;
+	}
+	else
+	{
+		if (n != NULL && n->stanga != NULL && n->dreapta != NULL)
+		{
+			return ((n->stanga->inaltime) - (n->dreapta->inaltime));
+		}
+		else
+		{
+			if (n != NULL && n->stanga == NULL && n->dreapta != NULL)
+			{
+				return (-(n->dreapta->inaltime));
+			}
+			else
+			{
+				if (n != NULL && n->stanga != NULL && n->dreapta == NULL)
+				{
+					return (n->stanga->inaltime);
+				}
+				else
+				{
+					if (n != NULL && n->stanga == NULL && n->dreapta == NULL)
+					{
+						return 0;
+					}
+				}
+			}
+		}
+	}
+}
+
+nod* insereaza(int cheie, nod* a)
+{
+	if (a == NULL)
+	{
+		nod* node;
+		node = (nod*)malloc(sizeof(nod));
+		node->cheie = cheie;
+		node->stanga = NULL;
+		node->dreapta = NULL;
+		node->inaltime = 1;
+		return node;
+	}
+	if (a != NULL)
+	{
+		if (cheie < a->cheie)
+		{
+			a->stanga = insereaza(cheie, a->stanga);
+		}
+		else
+		{
+			if (cheie > a->cheie)
+			{
+				a->dreapta = insereaza(cheie, a->dreapta);
+			}
+			else
+			{
+				return a;
+			}
+		}
+	}
+	if (a != NULL && a->stanga != NULL && a->dreapta != NULL)
+	{
+		a->inaltime = maximul(a->stanga->inaltime, a->dreapta->inaltime) + 1;
+	}
+	else
+	{
+		if (a != NULL && a->stanga == NULL && a->dreapta != NULL)
+		{
+			a->inaltime = maximul(0, a->dreapta->inaltime) + 1;
+		}
+		else
+		{
+			if (a != NULL && a->stanga != NULL && a->dreapta == NULL)
+			{
+				a->inaltime = maximul(a->stanga->inaltime, 0) + 1;
+			}
+			else
+			{
+				if (a != NULL && a->stanga == NULL && a->dreapta == NULL)
+				{
+					a->inaltime = maximul(0, 0) + 1;
+				}
+			}
+		}
+	}
+	return a;
+}
+
+void verificare_AVL(nod* rad)
+{
+	if (rad != NULL)
+	{
+		if (abs(factor_echilibrare(rad)) >= 2)
+		{
+			echilibrat = 0;//am gasit un subarbore dezechilibrat, deci arborele nu mai este AVL
+			return;
+		}
+		verificare_AVL(rad->stanga);
+		verificare_AVL(rad->dreapta);
+	}
+}
+
+int inOrder(struct nod *rad)
+{
+	int i=0;
+	if (rad != NULL)
+	{
+		inOrder(rad->stanga);
+		printf("%d ", rad->cheie);
+		if (rad->cheie % 2 == 0)
+		{
+			noduri[i] = rad->cheie;
+			i++;
+		}
+		inOrder(rad->dreapta);
+	}
+	return noduri[i];
+}
+
+struct nod* delete(struct nod* crt, int key)
+{
+	
+	if (crt == NULL)
+		return crt;
+	for(int i=0;i<11;i++)
+		if(noduri[i]%2==0)
+	if (key < crt->cheie)
+		crt->stanga = delete(crt->stanga, key);
+	else if (key > crt->cheie)
+		crt->right = delete(crt->right, key);
+	else
+	{
+
+		if ((crt->left == NULL) || (crt->right == NULL))
+		{
+			struct nod *ch = crt->left ? crt->left;
+				crt->right;
+
+			if (ch == NULL)
+			{
+				ch = crt;
+				crt = NULL;
+			}
+			else
+				*crt = *ch;
+
+			free(ch);
+		}
+		else
+		{
+			struct Node* temp = minValueNode(crt->right);
+			crt->key = crt->key;
+			crt->right = delete(crt->right, temp->key);
+		}
+	}
+
+
+	if (crt == NULL)
+		return crt;
+	crt->height = 1 + max(height(crt->left),
+		height(crt->right));
+	int balance = getBalance(crt);
+	if (balance > 1 && getBalance(crt->left) >= 0)
+		return rightRotate(crt);
+
+	if (balance > 1 && getBalance(crt->left) < 0)
+	{
+		crt->left = leftRotate(crt->left);
+		return rightRotate(crt);
+	}
+
+	if (balance < -1 && getBalance(crt->right) <= 0)
+		return leftRotate(crt);
+	if (balance < -1 && getBalance(crt->right) > 0)
+	{
+		crt->right = rightRotate(crt->right);
+		return leftRotate(crt);
+	}
+
+	return crt;
+}
+
+int main()
+{
+	int opt;
+	do
+	{
+		printf("\n1. Iesire\n");
+		printf("2. Inserare\n");
+		printf("3. Parcurgere arbore in inordine\n");
+		printf("4. Verificare daca arborele este echilibrat in sens AVL\n");
+		printf("5. Stergere");
+		printf("Dati o optiune: ");
+		scanf("%d", &opt);
+		switch (opt)
+		{
+		case 1:	
+			break;
+		case 2:
+			rad = initializeaza(rad);
+			rad = insereaza(12, rad);
+			rad = insereaza(5, rad);
+			rad = insereaza(40, rad);
+			rad = insereaza(19, rad);
+			rad = insereaza(27, rad);
+			rad = insereaza(33, rad);
+			rad = insereaza(22, rad);
+			rad = insereaza(18, rad);
+			rad = insereaza(25, rad);
+			rad = insereaza(3, rad);
+			break;
+		case 3:
+			arb_nou = inOrder;
+			break;
+		case 4:
+			verificare_AVL(rad);
+			if (echilibrat == 1)
+			{
+				printf("Arborele binar ordonat este AVL!\n");
+			}
+			else
+			{
+				printf("Arborele binar ordonat NU este AVL!\n");
+			}
+			break;
+		case 5:
+			rad = delete(rad, noduri);
+			break;
+		default:printf("Optiune gresita!");
+			break;
+		}
+	} while (opt != 1);
+	
+	return 0;
+}
+
+//Dupa inserare am incercat sa salvez arborele parcurs in inordine intr-un alt arbore pentru a avea numerele pare in ordinea dorita pentru a facilita stergerea
